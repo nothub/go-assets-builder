@@ -1,0 +1,33 @@
+name: "🧑‍🏭"
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "~1.18"
+          check-latest: true
+      - name: Lint
+        run: go vet
+      - name: Build
+        run: mkdir -p ./out ; go build -race -o ./out/
+      - uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: "automated release at commit ${{ github.sha }}"
+          draft: false
+          prerelease: false
+      - uses: csexton/release-asset-action@v2
+        with:
+          pattern: "./out/*"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
